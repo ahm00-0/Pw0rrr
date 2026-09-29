@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاحص قوة كلمة المرور - Password Strength Checker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+        .privacy-notice {
+            background-color: #e8f0fe;
+            color: #1967d2;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 25px;
+            border: 1px solid #d2e3fc;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #444;
+        }
+        .input-group, .generated-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input[type="password"], input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus {
+            border-color: #1a73e8;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        #toggle-password {
+            background: #f1f3f4;
+            padding: 0 15px;
+            color: #555;
+        }
+        #toggle-password:hover {
+            background: #e0e0e0;
+        }
+        .btn {
+            padding: 12px 20px;
+            font-weight: bold;
+        }
+        .btn.primary {
+            background-color: #1a73e8;
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .btn.primary:hover {
+            background-color: #1557b0;
+        }
+        .btn.secondary {
+            background-color: #34a853;
+            color: white;
+        }
+        .btn.secondary:hover {
+            background-color: #2b803e;
+        }
+        .strength-meter {
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+        .results h3 {
+            margin-bottom: 5px;
+        }
+        .warning {
+            background-color: #fce8e6;
+            color: #d93025;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        .reasons-list {
+            margin-top: 15px;
+            padding-right: 20px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .success-msg {
+            color: #34a853;
+            font-weight: bold;
+            font-size: 14px;
+            display: block;
+            text-align: center;
+        }
+        footer {
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+            margin-top: 20px;
+        }
+        @media (max-width: 480px) {
+            .input-group, .generated-group {
+                flex-direction: column;
+            }
+            #toggle-password, .btn.secondary {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>فاحص قوة كلمة المرور 🔐</h1>
+            <p>أداة آمنة لفحص قوة كلمة مرورك وتوليد كلمات مرور قوية.</p>
+        </header>
+
+        <div class="privacy-notice">
+            <strong>🛡️ الخصوصية والأمان:</strong> تتم جميع عمليات تحليل كلمة المرور داخل متصفحك فقط. لا يتم تخزين كلمة المرور في أي مكان (لا يوجد قاعدة بيانات أو Local Storage) ولا يتم إرسالها إلى أي خادم نهائياً.
+        </div>
+
+        <div class="section">
+            <h2>تحليل كلمة المرور</h2>
+            <div class="input-group">
+                <input type="password" id="password-input" placeholder="أدخل كلمة المرور هنا...">
+                <button id="toggle-password" title="إظهار/إخفاء">👁️</button>
+            </div>
+
+            <div class="strength-meter">
+                <div class="strength-bar" id="strength-bar"></div>
+            </div>
+
+            <div class="results">
+                <h3 id="strength-text">مستوى القوة: -</h3>
+                <p id="strength-score">النسبة: 0%</p>
+                <div id="common-warning" class="warning hidden">
+                    ⚠️ هذه كلمة مرور شائعة جداً وموجودة في قوائم الاختراق، يسهل تخمينها!
+                </div>
+                <ul id="strength-reasons" class="reasons-list"></ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>توليد كلمة مرور قوية</h2>
+            <button id="generate-btn" class="btn primary">🎲 توليد كلمة مرور قوية (16 حرف)</button>
+            
+            <div class="generated-group">
+                <input type="text" id="generated-password" readonly placeholder="ستظهر كلمة المرور هنا...">
+                <button id="copy-btn" class="btn secondary">📋 نسخ</button>
+            </div>
+            <span id="copy-msg" class="success-msg hidden">✅ تم النسخ بنجاح!</span>
+        </div>
+
+        <footer>
+            <p><strong>مشروع مقدم من (مجموعة رقم 1):</strong></p>
+            <p>أحمد خالد العتيبي | عبدالعزيز فواز الصباغ | تركي عبدالله القرني</p>
+        </footer>
+    </div>
+
+    <script>
+        const commonPasswords = [
+            "123456", "password", "12345678", "qwerty", "123456789", 
+            "12345", "1234", "111111", "1234567", "dragon", 
+            "123123", "baseball", "password123", "monkey", "superman", 
+            "letmein", "football", "shadow", "mustang", "trustno1", 
+            "master", "iloveyou", "666666", "1234567890", "qwertyuiop", 
+            "admin", "admin123", "welcome", "123456aA", "000000",
+            "abcdef", "hello", "asdfgh", "zxcvbn", "qazwsx", 
+            "12345678a", "abc123", "123456789a", "123321", "mypassword"
+        ];
+
+        const passwordInput = document.getElementById('password-input');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        const strengthScore = document.getElementById('strength-score');
+        const strengthReasons = document.getElementById('strength-reasons');
+        const commonWarning = document.getElementById('common-warning');
+
+        const generateBtn = document.getElementById('generate-btn');
+        const generatedPasswordInput = document.getElementById('generated-password');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyMsg = document.getElementById('copy-msg');
+
+        togglePasswordBtn.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            analyzePassword(password);
+        });
+
+        function analyzePassword(password) {
+            let score = 0;
+            let reasons = [];
+            
+            if (password.length === 0) {
+                updateUI(0, "-", [], false);
+                return;
+            }
+
+            if (password.length >= 8) {
+                score += 20;
+            } else {
+                reasons.push("❌ كلمة المرور قصيرة، يجب أن تكون 8 أحرف على الأقل.");
+            }
+
+            if (/[a-z]/.test(password)) {
+                score += 20;
+            } else {
+                reasons.push("❌ أضف أحرفاً إنجليزية صغيرة (a-z).");
+            }
+
+            if (/[A-Z]/.test(password)) {
+                score += 20;
+            } else {
+                reasons.push("❌ أضف أحرفاً إنجليزية كبيرة (A-Z).");
+            }
+
+            if (/[0-9]/.test(password)) {
+                score += 20;
+            } else {
+                reasons.push("❌ أضف أرقاماً (0-9).");
+            }
+
+            if (/[^a-zA-Z0-9]/.test(password)) {
+                score += 20;
+            } else {
+                reasons.push("❌ أضف رموزاً خاصة (مثل @, #, $, %).");
+            }
+
+            const isCommon = commonPasswords.includes(password.toLowerCase());
+            
+            if (isCommon) {
+                score = Math.min(score, 30);
+                reasons.push("❌ تم العثور على الكلمة في قائمة الكلمات الشائعة والمخترقة.");
+            }
+
+            if (score === 100) {
+                reasons.push("✅ كلمة المرور قوية وممتازة.");
+            }
+
+            updateUI(score, getStrengthLabel(score, isCommon), reasons, isCommon);
+        }
+
+        function getStrengthLabel(score, isCommon) {
+            if (isCommon) return "ضعيفة جداً (شائعة)";
+            if (score <= 40) return "ضعيفة";
+            if (score <= 80) return "متوسطة";
+            return "قوية";
+        }
+
+        function updateUI(score, label, reasons, isCommon) {
+            strengthScore.textContent = `النسبة: ${score}%`;
+            strengthText.textContent = `مستوى القوة: ${label}`;
+            strengthBar.style.width = `${score}%`;
+            
+            if (score <= 40 || isCommon) {
+                strengthBar.style.backgroundColor = "#d93025";
+                strengthText.style.color = "#d93025";
+            } else if (score <= 80) {
+                strengthBar.style.backgroundColor = "#f9ab00";
+                strengthText.style.color = "#f9ab00";
+            } else {
+                strengthBar.style.backgroundColor = "#188038";
+                strengthText.style.color = "#188038";
+            }
+
+            if (isCommon) {
+                commonWarning.classList.remove('hidden');
+            } else {
+                commonWarning.classList.add('hidden');
+            }
+
+            strengthReasons.innerHTML = "";
+            reasons.forEach(reason => {
+                const li = document.createElement('li');
+                li.textContent = reason;
+                strengthReasons.appendChild(li);
+            });
+        }
+
+        generateBtn.addEventListener('click', () => {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+            const passwordLength = 16;
+            let newPassword = "A" + "a" + "1" + "@";
+            
+            for (let i = 4; i < passwordLength; i++) {
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                newPassword += chars[randomIndex];
+            }
+
+            newPassword = newPassword.split('').sort(() => 0.5 - Math.random()).join('');
+            generatedPasswordInput.value = newPassword;
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const password = generatedPasswordInput.value;
+            if (!password) return;
+
+            navigator.clipboard.writeText(password).then(() => {
+                copyMsg.classList.remove('hidden');
+                setTimeout(() => {
+                    copyMsg.classList.add('hidden');
+                }, 3000);
+            }).catch(() => {
+                alert("حدث خطأ أثناء النسخ");
+            });
+        });
+    </script>
+</body>
+</html>
